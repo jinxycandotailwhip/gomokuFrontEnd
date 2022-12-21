@@ -157,16 +157,14 @@ function App() {
           animate: true,
           busy: isBusy,
 
-          signMap: signMap,
+          signMap: board.signMap,
           showCoordinates,
           heatMap: showHeatMap && heatMap,
           markerMap: showMarkerMap && markerMap,
 
           onVertexMouseUp: (evt, [x, y]) => {
             let sign = evt.button === 0 ? 1 : -1;
-            let newBoard = setBoard(()=>board.makeMove(sign, [x, y]));
-            console.log("newBoard:", newBoard)
-            console.log("board:", board)
+            setBoard(()=>board.makeMove(sign, [x, y]));
           },
         }),
       )
