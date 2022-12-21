@@ -1,4 +1,5 @@
 import { h, render, Component } from "preact";
+import { useState } from "preact/hooks"
 import Board from "@sabaki/go-board";
 import { Goban } from "@sabaki/shudan";
 
@@ -80,30 +81,15 @@ const markerMap = (() => {
   ];
 })();
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      board: new Board(signMap),
-      vertexSize: 34,
-      showCoordinates: true,
-      showHeatMap: true,
-      showMarkerMap: true,
-      player: 0,
-      sessionID: randomRange(100000, 200000),
-      isBusy: false,
-    };
-  }
-
-  render() {
-    let {
-      vertexSize,
-      showCoordinates,
-      showHeatMap,
-      showMarkerMap,
-    } = this.state;
-
+function App() {
+    const [board, setBoard] = useState(new Board(signMap))
+    const vertexSize = 34
+    const showCoordinates = true
+    const showHeatMap = true
+    const showMarkerMap = true
+    const [player, setPlayer] = useState(0)
+    const [sessionID, setSessionID] = useState(randomRange(1000000, 2000000))
+    const [isBusy, setIsBusy] = useState(false)
     return h(
       "section",
       {
@@ -169,24 +155,23 @@ class App extends Component {
           },
           vertexSize,
           animate: true,
-          busy: this.state.isBusy,
+          busy: isBusy,
 
-          signMap: this.state.board.signMap,
+          signMap: signMap,
           showCoordinates,
           heatMap: showHeatMap && heatMap,
           markerMap: showMarkerMap && markerMap,
 
           onVertexMouseUp: (evt, [x, y]) => {
             let sign = evt.button === 0 ? 1 : -1;
-            let newBoard = this.state.board.makeMove(sign, [x, y]);
-            this.setState({ board: newBoard });
+            let newBoard = setBoard(()=>board.makeMove(sign, [x, y]));
+            console.log("newBoard:", newBoard)
+            console.log("board:", board)
           },
         }),
       )
     );
-  }
 }
-
 function randomRange(min, max) { // min最小值，max最大值
   return Math.floor(Math.random() * (max - min)) + min;
 }

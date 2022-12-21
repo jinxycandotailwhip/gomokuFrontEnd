@@ -61,7 +61,6 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: "./public/index.html",
-      favicon: "./src/assets/images/favicon.png",
     }),
     new BundleAnalyzerPlugin({
       analyzerHost: "0.0.0.0", // To make it work in the container
