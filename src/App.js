@@ -1,5 +1,5 @@
 import { h, render, Component } from "preact";
-import { useState } from "preact/hooks"
+import { useCallback, useEffect, useState } from "preact/hooks"
 import Board from "@sabaki/go-board";
 import { Goban } from "@sabaki/shudan";
 
@@ -87,9 +87,49 @@ function App() {
     const showCoordinates = true
     const showHeatMap = true
     const showMarkerMap = true
-    const [player, setPlayer] = useState(0)
+    const [player, setPlayer] = useState(-1)
     const [sessionID, setSessionID] = useState(randomRange(1000000, 2000000))
     const [isBusy, setIsBusy] = useState(false)
+    useEffect(()=>{
+      setBoard(()=>board.clear())
+    }, [sessionID])
+    const clickStart = useCallback(()=>{
+      console.log("start, sessionID:", sessionID)
+      // (sessionID) => ()
+      // fetch("http://localhost:8080/api/start", {
+      //   method: 'post',
+      //   headers: {
+      //     'Content-Type':'application/json'
+      //   },
+      //   body: JSON.stringify({
+      //     'session_id': sessionID
+      //   })
+      // })
+      //   .then((response)=>response.json())
+      //   .then((response)=>{
+      //     console.log(response)
+      //   })
+    }, [sessionID])
+    const clickRestart = useCallback(()=>{
+      const oldSessionID = sessionID
+      console.log("restart, oldSessionID:", oldSessionID)
+      setSessionID(()=>randomRange(100000, 200000))
+      // (oldSessionID, newSessionID)=>()
+      // fetch("http://localhost:8080/api/restart", {
+      //   method: 'post',
+      //   headers: {
+      //     'Content-Type':'application/json'
+      //   },
+      //   body: JSON.stringify({
+      //     'old_session_id': oldSessionID,
+      //     'new_session_id': sessionID
+      //   })
+      // })
+      //   .then((response)=>response.json())
+      //   .then((response)=>{
+      //     console.log(response)
+      //   })
+    }, [sessionID])
     return h(
       "section",
       {
@@ -119,7 +159,7 @@ function App() {
                 fontSize: 30,
               },
               onClick: (evt) => {
-                console.log(this.state.sessionID)
+                clickStart()
               },
             },
             "start"
@@ -135,7 +175,7 @@ function App() {
                 fontSize: 30,
               },
               onClick: (evt) => {
-                this.state.sessionID = randomRange(100000, 200000)
+                clickRestart()
               },
             },
             "restart"
@@ -163,13 +203,33 @@ function App() {
           markerMap: showMarkerMap && markerMap,
 
           onVertexMouseUp: (evt, [x, y]) => {
-            let sign = evt.button === 0 ? 1 : -1;
-            setBoard(()=>board.makeMove(sign, [x, y]));
+            if (board.get([x,y]) !== 0) {
+              return 
+            }
+            // 留给ajax,（x, y, sessionID) => (win, player, [x, y])
+            setPlayer(-player)
+            setBoard(()=>board.set([x, y], player));
+            fetch("http://localhost:8080/api/move", {
+              method: 'post',
+              headers: {
+                'Content-Type':'application/json'
+              },
+              body: JSON.stringify({
+                "coor_x": x, 
+                "coor_y": y,
+                "session_id": sessionID
+              })
+            })
+              .then((response)=>response.json())
+              .then((response)=>{
+                console.log(response)
+              })
           },
         }),
       )
     );
 }
+
 function randomRange(min, max) { // min最小值，max最大值
   return Math.floor(Math.random() * (max - min)) + min;
 }
