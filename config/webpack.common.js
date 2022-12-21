@@ -1,13 +1,3 @@
-const path = require("path");
-const fs = require("fs");
-const lessToJs = require("less-vars-to-js");
-const themeVariables = lessToJs(
-  fs.readFileSync(
-    path.join(__dirname, "../src/less/ant-theme-vars.less"),
-    "utf8"
-  )
-);
-
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const BundleAnalyzerPlugin =
   require("webpack-bundle-analyzer").BundleAnalyzerPlugin;
@@ -52,23 +42,18 @@ module.exports = {
         },
       },
       {
-        test: /\.(png|jpe?g|gif|woff|svg|eot|ttf)$/i,
+        test: /\.(png|jpe?g|gif|woff|eot|ttf)$/i,
         use: [{ loader: "file-loader" }],
+      },
+      {
+        test:/\.(jpg|png|gif|bmp|jpeg)$/, 
+        use: 'url-loader?limit=88'
       },
       {
         test: /\.scss|\.css|\.less$/,
         use: [
           "style-loader",
           "css-loader",
-          {
-            loader: "less-loader",
-            options: {
-              lessOptions: {
-                modifyVars: themeVariables,
-                javascriptEnabled: true,
-              },
-            },
-          },
         ],
       },
     ],
