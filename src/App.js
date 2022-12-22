@@ -175,6 +175,11 @@ function App() {
 
         h(
           "p",
+          {},
+          "使用alphGoZero的policy-Value-Network训练之后的policy下棋(受限树莓派cpu，MCTS搜索为2层)不是ab剪枝！不是ab剪枝！不是ab剪枝!"
+          ),
+        h(
+          "p",
           { style: { margin: "0 0 .5em 0" } },
           h(
             "button",
@@ -250,18 +255,24 @@ function App() {
             })
               .then((response)=>response.json())
               .then((response)=>{
+                console.log(response)
                 const ai_x = response.x
                 const ai_y = response.y
                 const end = response.end
                 const winner = response.winner
+                if (winner == -100) {
+                  alert("an error occured, please restart")
+                  setIsBusy(true)
+                  return 
+                }
                 console.log(end, winner)
                 console.log("x, y:", ai_x, ai_y)
                 const newBoard1 = board.set([ai_x, ai_y], -player)
                 setBoard(new Board(newBoard1.signMap));
                 if (end && winner === 2) {
-                  setBoard(new Board(loose))
                   setIsBusy(true)
                   setIsEnd(true)
+                  setTimeout(()=>{setBoard(new Board(loose))}, 2000)
                 }
                 if (end && winner === 1) {
                   setIsBusy(true)
