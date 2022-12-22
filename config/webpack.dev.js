@@ -8,8 +8,8 @@ const devConfig = {
     port: 3000,
     historyApiFallback: true,
     proxy: {
-      "/api": {
-        target: "https://your-api-url",
+      "/": {
+        target: "http://localhost:9999",
         changeOrigin: true,
       },
     },

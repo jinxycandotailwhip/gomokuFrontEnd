@@ -21,6 +21,24 @@ const signMap = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ];
 
+const loose = [
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+[0, 0, 0, 0, 1, -1, -1, -1, -1, -1, -1, 1, 0, 0, 0],
+[0, 0, 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 0, 0],
+[0, 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1],
+[0, 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1],
+[0, 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1],
+[0, 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1],
+[0, 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1],
+[0, 0, 0, 1, 1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1],
+[0, 0, 0, 0, 0, 0, 0, 1, -1, -1, -1, 1, 0, 0, 0],
+[0, 0, 0, 0, 0, 0, 0, 1, -1, 1, 1, 0, 0, 0, 0],
+[0, 0, 0, 0, 0, 0, 1, -1, -1, 1, 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 0, 0, 1, -1, 1, 0, 0, 0, 0, 0, 0],
+[0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+];
+
 const heatMap = (() => {
   let _ = null;
   let O = (strength, text) => ({ strength, text });
@@ -83,52 +101,61 @@ const markerMap = (() => {
 
 function App() {
     const [board, setBoard] = useState(new Board(signMap))
+    const [isEnd, setIsEnd] = useState(false)
     const vertexSize = 34
     const showCoordinates = true
     const showHeatMap = true
     const showMarkerMap = true
-    const [player, setPlayer] = useState(-1)
+    const [player, setPlayer] = useState(1)
     const [sessionID, setSessionID] = useState(randomRange(1000000, 2000000))
-    const [isBusy, setIsBusy] = useState(false)
+    const [isBusy, setIsBusy] = useState(true)
     useEffect(()=>{
-      setBoard(()=>board.clear())
+      setBoard(()=>{
+        const newBoard = board.clear()
+        return new Board(newBoard.signMap)
+      })
     }, [sessionID])
     const clickStart = useCallback(()=>{
-      console.log("start, sessionID:", sessionID)
+      if (isEnd) {
+        return 
+      }
+      setIsBusy(false)
       // (sessionID) => ()
-      // fetch("http://localhost:8080/api/start", {
-      //   method: 'post',
-      //   headers: {
-      //     'Content-Type':'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     'session_id': sessionID
-      //   })
-      // })
-      //   .then((response)=>response.json())
-      //   .then((response)=>{
-      //     console.log(response)
-      //   })
-    }, [sessionID])
+      fetch("/api/start", {
+        method: 'post',
+        headers: {
+          'Content-Type':'application/json'
+        },
+        body: JSON.stringify({
+          'session_id': sessionID
+        })
+      })
+        .then((response)=>response.json())
+        .then((response)=>{
+          console.log(response)
+        })
+    }, [sessionID, isEnd])
     const clickRestart = useCallback(()=>{
+      setIsBusy(false)
+      setIsEnd(false)
       const oldSessionID = sessionID
-      console.log("restart, oldSessionID:", oldSessionID)
-      setSessionID(()=>randomRange(100000, 200000))
+      const newSessionID = randomRange(1000000, 2000000)
+      setSessionID(newSessionID)
       // (oldSessionID, newSessionID)=>()
-      // fetch("http://localhost:8080/api/restart", {
-      //   method: 'post',
-      //   headers: {
-      //     'Content-Type':'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     'old_session_id': oldSessionID,
-      //     'new_session_id': sessionID
-      //   })
-      // })
-      //   .then((response)=>response.json())
-      //   .then((response)=>{
-      //     console.log(response)
-      //   })
+      fetch("/api/restart", {
+        method: 'post',
+        headers: {
+          'Content-Type':'application/json'
+        },
+        body: JSON.stringify({
+          'old_session_id': oldSessionID,
+          'new_session_id': newSessionID,
+        })
+      })
+        .then((response)=>response.json())
+        .then((response)=>{
+          console.log(response)
+        })
     }, [sessionID])
     return h(
       "section",
@@ -190,9 +217,9 @@ function App() {
           }
         },
         h(Goban, {
-          innerProps: {
-            onContextMenu: (evt) => evt.preventDefault(),
-          },
+          // innerProps: {
+          //   onContextMenu: (evt) => evt.preventDefault(),
+          // },
           vertexSize,
           animate: true,
           busy: isBusy,
@@ -207,9 +234,10 @@ function App() {
               return 
             }
             // 留给ajax,（x, y, sessionID) => (win, player, [x, y])
-            setPlayer(-player)
-            setBoard(()=>board.set([x, y], player));
-            fetch("http://localhost:8080/api/move", {
+            const newBoard = board.set([x, y], player)
+            setBoard(new Board(newBoard.signMap));
+            console.log(board)
+            fetch("/api/move", {
               method: 'post',
               headers: {
                 'Content-Type':'application/json'
@@ -222,7 +250,24 @@ function App() {
             })
               .then((response)=>response.json())
               .then((response)=>{
-                console.log(response)
+                const ai_x = response.x
+                const ai_y = response.y
+                const end = response.end
+                const winner = response.winner
+                console.log(end, winner)
+                console.log("x, y:", ai_x, ai_y)
+                const newBoard1 = board.set([ai_x, ai_y], -player)
+                setBoard(new Board(newBoard1.signMap));
+                if (end && winner === 2) {
+                  setBoard(new Board(loose))
+                  setIsBusy(true)
+                  setIsEnd(true)
+                }
+                if (end && winner === 1) {
+                  setIsBusy(true)
+                  setIsEnd(true)
+                  alert("you win :)")
+                }
               })
           },
         }),
@@ -233,5 +278,6 @@ function App() {
 function randomRange(min, max) { // min最小值，max最大值
   return Math.floor(Math.random() * (max - min)) + min;
 }
+
 
 export default App;
