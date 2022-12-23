@@ -66,7 +66,7 @@ const heatMap = (() => {
   ];
 })();
 
-const markerMap = (() => {
+const getMarkerMap = (x, y) => {
   let _ = null;
   let O = { type: "circle" };
   let X = { type: "cross" };
@@ -80,7 +80,7 @@ const markerMap = (() => {
   let C = L("c");
   let longLabel = L("Long\nlabel with linebreak");
 
-  return [
+  let orignMap = [
     [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
     [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
     [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
@@ -97,15 +97,20 @@ const markerMap = (() => {
     [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
     [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _],
   ];
-})();
+  if (x<0) {
+    return orignMap
+  }
+  orignMap[x][y] = S
+  return orignMap
+};
 
 function App() {
     const [board, setBoard] = useState(new Board(signMap))
     const [isEnd, setIsEnd] = useState(false)
+    const [markerMap, setMarkerMap] = useState(getMarkerMap(-1, -1))
     const vertexSize = 34
     const showCoordinates = true
     const showHeatMap = true
-    const showMarkerMap = true
     const [player, setPlayer] = useState(1)
     const [sessionID, setSessionID] = useState(randomRange(1000000, 2000000))
     const [isBusy, setIsBusy] = useState(true)
@@ -121,7 +126,7 @@ function App() {
       }
       setIsBusy(false)
       // (sessionID) => ()
-      fetch("/api/start", {
+      fetch("/gomoku/api/start", {
         method: 'post',
         headers: {
           'Content-Type':'application/json'
@@ -142,7 +147,7 @@ function App() {
       const newSessionID = randomRange(1000000, 2000000)
       setSessionID(newSessionID)
       // (oldSessionID, newSessionID)=>()
-      fetch("/api/restart", {
+      fetch("/gomoku/api/restart", {
         method: 'post',
         headers: {
           'Content-Type':'application/json'
@@ -222,9 +227,6 @@ function App() {
           }
         },
         h(Goban, {
-          // innerProps: {
-          //   onContextMenu: (evt) => evt.preventDefault(),
-          // },
           vertexSize,
           animate: true,
           busy: isBusy,
@@ -232,7 +234,7 @@ function App() {
           signMap: board.signMap,
           showCoordinates,
           heatMap: showHeatMap && heatMap,
-          markerMap: showMarkerMap && markerMap,
+          markerMap: markerMap,
 
           onVertexMouseUp: (evt, [x, y]) => {
             if (board.get([x,y]) !== 0) {
@@ -241,8 +243,9 @@ function App() {
             // 留给ajax,（x, y, sessionID) => (win, player, [x, y])
             const newBoard = board.set([x, y], player)
             setBoard(new Board(newBoard.signMap));
+            setIsBusy(true)
             console.log(board)
-            fetch("/api/move", {
+            fetch("/gomoku/api/move", {
               method: 'post',
               headers: {
                 'Content-Type':'application/json'
@@ -269,9 +272,12 @@ function App() {
                 console.log("x, y:", ai_x, ai_y)
                 const newBoard1 = board.set([ai_x, ai_y], -player)
                 setBoard(new Board(newBoard1.signMap));
+                setMarkerMap(getMarkerMap(ai_y, ai_x))
+                setIsBusy(false)
                 if (end && winner === 2) {
                   setIsBusy(true)
                   setIsEnd(true)
+                  setMarkerMap(getMarkerMap(-1, -1))
                   setTimeout(()=>{setBoard(new Board(loose))}, 2000)
                 }
                 if (end && winner === 1) {
