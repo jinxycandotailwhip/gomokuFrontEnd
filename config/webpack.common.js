@@ -4,7 +4,7 @@ const BundleAnalyzerPlugin =
 
 module.exports = {
   output: {
-    publicPath: "/",
+    publicPath: "/gomokuGame/",
   },
   resolve: {
     alias: {
@@ -28,13 +28,6 @@ module.exports = {
                 {
                   pragma: "h",
                   pragmaFrag: "Fragment",
-                },
-              ],
-              [
-                "import",
-                {
-                  libraryName: "antd",
-                  style: true,
                 },
               ],
             ],
